@@ -29,6 +29,11 @@ final class DataManager {
             label: "measurementQueue",
             attributes: .concurrent)
     
+    fileprivate let recordingQueue =
+        DispatchQueue(
+            label: "recordingQueue",
+            attributes: .concurrent)
+    
     var measurements: [Measurement] {
         // handling readers, writers problem
         var measurementsCopy: [Measurement]!
@@ -57,15 +62,17 @@ final class DataManager {
     func loadAllRecordings() {
         print("Loading Recordings.")
         self._measurements = []
+        recordingQueue.async {
             // read recording data text file
             let recordings = self.dataLoader.loadData(withFileName: recordingDataFileName)
             // parse recording data to obtain measurements
             var tempMeasurements = self.dataLoader.parseRecordings(recordings)
-            updateMeasurements(with: tempMeasurements)
+            self.updateMeasurements(with: tempMeasurements)
             tempMeasurements = self.mergeMeasurements(tempMeasurements)
-            updateMeasurements(with: tempMeasurements)
+            self.updateMeasurements(with: tempMeasurements)
             tempMeasurements = self.computeOneRepMaxForAll(tempMeasurements)
-            updateMeasurements(with: tempMeasurements)
+            self.updateMeasurements(with: tempMeasurements)
+        }
     }
     
     private func mergeMeasurements(_ mergeMeasurements:[Measurement]) -> [Measurement] {
